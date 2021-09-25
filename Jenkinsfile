@@ -6,7 +6,7 @@ pipeline {
 
     stage('Checkout Source') {
       steps {
-        git url:'https://github.com/atid1024/jenkins.git'
+        git url:'https://github.com/atid1024/jenkins.git', branch:'master'
       }
     }
 
