@@ -22,7 +22,8 @@ env'''
     stage('Deploy') {
       steps {
         sh '''echo $PWD
-echo $HOME'''
+echo $HOME 
+ls -al'''
       }
     }
 
