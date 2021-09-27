@@ -23,7 +23,8 @@ env'''
       steps {
         sh '''echo $PWD
 echo $HOME 
-ls -al'''
+scp nginx.yaml root@172.18.0.6:/ 
+ssl root@172.18.0.6 ls /'''
       }
     }
 
