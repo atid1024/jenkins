@@ -6,7 +6,6 @@ pipeline {
         stage('PreDep') {
           steps {
             sh '''git --version 
-mvn --version 
 env'''
           }
         }
