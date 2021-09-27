@@ -5,9 +5,9 @@ pipeline {
       parallel {
         stage('PreDep') {
           steps {
-            sh '''git --version
-java -v
-mvn --version'''
+            sh '''git --version 
+mvn --version 
+env'''
           }
         }
 
