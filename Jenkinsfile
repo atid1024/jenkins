@@ -23,8 +23,9 @@ env'''
       steps {
         sh '''echo $PWD
 echo $HOME 
+ls -al
 scp nginx.yaml root@172.18.0.6:/ 
-ssh root@172.18.0.6 kubectl create -f /nginx.yaml'''
+ssh root@172.18.0.6 kubectl apply -f /nginx.yaml'''
       }
     }
 
