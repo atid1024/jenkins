@@ -21,7 +21,8 @@ env'''
 
     stage('Deploy') {
       steps {
-        sh 'ls -al'
+        sh '''echo $PWD
+echo $USER'''
       }
     }
 
