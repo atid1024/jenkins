@@ -22,7 +22,7 @@ env'''
     stage('Deploy') {
       steps {
         sh '''echo $PWD
-echo $USER'''
+echo $HOME'''
       }
     }
 
