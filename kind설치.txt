@@ -1,0 +1,117 @@
+KinD(kubernetes in Docker) https://kind.sigs.k8s.io/
+
+cat /proc/sys/net/ipv4/ip_forward
+swapoff -a
+apt install -y docker.io
+usermod -aG docker redolence
+
+curl -LO https://dl.k8s.io/release/v1.20.0/bin/linux/amd64/kubectl
+
+wget https://golang.org/dl/go1.16.7.linux-amd64.tar.gz
+tar zfx go1.16.7.linux-amd64.tar.gz -C /usr/local
+
+export PATH=$PATH:/usr/local/go/bin
+GO111MODULE="on" go get sigs.k8s.io/kind@v0.11.1
+
+   32  cat << EOF > ./kube-cluster-kind.yaml
+   33  kind: Cluster
+   34  apiVersion: kind.x-k8s.io/v1alpha4
+   35  nodes:
+   36  - role: control-plane
+   37  - role: worker
+   38  - role: worker
+   39  EOF
+
+kind create cluster --config kube-cluster-kind.yaml
+
+---------metallb 설치------------------
+kubectl edit configmap -n kube-system kube-proxy
+mode: "ipvs"
+ipvs:
+  strictARP: true
+
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/namespace.yaml
+kubectl apply -f https://raw.githubusercontent.com/metallb/metallb/v0.10.2/manifests/metallb.yaml
+cat << EOF > ./config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  namespace: metallb-system
+  name: config
+data:
+  config: |
+    address-pools:
+    - name: default
+      protocol: layer2
+      addresses:
+      - 172.18.70.1-172.18.70.254
+EOF
+kubectl apply -f config.yaml
+
+-----------helm3 설치-------------------------
+   93  curl https://raw.githubusercontent.com/helm/helm/master/scripts/get-helm-3 > get_helm.sh
+   94  chmod 700 get_helm.sh
+   95  ./get_helm.sh
+
+-----------ingress 설치-------------------------
+   97  helm repo add stable https://charts.helm.sh/stable
+   98  helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
+   99  helm repo update
+  100  helm show values ingress-nginx/ingress-nginx > /tmp/ingress-nginx.yaml
+  101  vi /tmp/ingress-nginx.yaml 
+hostNetwork: True
+
+  hostPort:
+    enabled: True
+kind: DaemonSet
+
+  131  kubectl create ns ingress-nginx
+  132  helm install nginx-ingress ingress-nginx/ingress-nginx --namespace=ingress-nginx --values /tmp/ingress-nginx.yaml
+
+------------metrics server 설치------------------------------
+wget https://github.com/kubernetes-sigs/metrics-server/releases/download/v0.5.0/components.yaml
+vi components.yaml
+        args:
+          - --cert-dir=/tmp
+          - --secure-port=4443
+          - --kubelet-insecure-tls
+kubectl create -f components.yaml
+---------------------------------------------------------------
+
+유용한 awk column to row
+awk '{for(i=1;i<=NF;i++) printf "%s\n",$i}'
+
+----azure cli 설치
+curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+
+redolence  ALL=(ALL) NOPASSWD:ALL
+
+ls -l ~/.ssh/id_*.pub
+ssh-keygen -t rsa -b 4096 -C "your_email@domain.com"
+ssh-copy-id remote_username@server_ip_address
+
+POSTGRES_PASSWORD, POSTGRES_USER, POSTGRES_DB
+MYSQL_ROOT_PASSWORD, MYSQL_DATABASE, MYSQL_USER, MYSQL_PASSWORD
+
+# 유용한 명령어 (iptables)
+## iptables setting
+```
+생성
+iptables -t nat -A PREROUTING -p TCP --dport 31024 -j DNAT --to-destination 172.18.70.4:80
+iptables -A FORWARD -p tcp --dport 80 -d 172.18.70.4 -j ACCEPT
+삭제
+iptables -D FORWARD -p tcp --dport 80 -d 172.18.70.4 -j ACCEPT
+iptables -t nat -D PREROUTING -p TCP --dport 31024 -j DNAT --to-destination 172.18.70.4:80
+```
+
+* -t Table은 뒤에 따라오는 object Table
+* -A는 뒤에 따라오는 object PREROUTING rule 추가
+* -p Protocol은 다음에 따라오는 object protocol
+* --dport는 다음에 따라오는 해당 서버의 NetworkPort
+> - 잘알려진 port : 0 ~ 1023
+> - 등록 port : 1024 ~ 49151
+> - 동적 및 사용자 생성 port : 49152 ~ 65535
+> - kubernetes 사용 NnoPort : 30000 ~ 32767
+* -j (jump)는 뒤에 따라오는 DNAT의 --to-destination에서 지정한 address:port로 실행
+* -D는 rule 삭제
